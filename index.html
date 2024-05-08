@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Data Weergave</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+</head>
+<body>
+    <div id="map" style="width: 100%; height: 600px;"></div>
+    <input type="text" id="locationInput" placeholder="Voer een locatie in">
+    <button onclick="calculateDistance()">Bereken Afstand</button>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibW9iaXNlbnNlIiwiYSI6ImNsdnhqcWs4ZzB0dWUyanBqa2JmeG85dXUifQ.1_he5hZkQk28N9ozWKOj8g';
+let userLocation;
+
+        navigator.geolocation.getCurrentPosition(successLocation, errorLocation, { enableHighAccuracy: true });
+
+        function successLocation(position) {
+            userLocation = [position.coords.longitude, position.coords.latitude];
+            const map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: userLocation,
+                zoom: 16,
+                projection: {
+                    name: 'lambertConformalConic',
+                    center: [0, 30],
+                    parallels: [30, 30]
+                }
+            });
+            new mapboxgl.Marker().setLngLat(userLocation).addTo(map);
+        }
+
+        function errorLocation() {
+            alert("Kan uw locatie niet vinden. Zorg ervoor dat uw locatie is ingeschakeld.");
+        }
+
+        async function calculateDistance() {
+    const locationInput = document.getElementById('locationInput').value;
+    if (!locationInput) {
+        alert("Voer een locatie in.");
+        return;
+    }
+
+    // Get the coordinates of the input location using the Mapbox Geocoding API
+    const response = await fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(locationInput) + '.json?access_token=' + mapboxgl.accessToken);
+    const data = await response.json();
+    const inputLocation = data.features[0].center;
+
+    // Calculate the distance with Turf.js
+    var from = turf.point(userLocation);
+    var to = turf.point(inputLocation);
+    var options = { units: 'kilometers' };
+    var distance = turf.distance(from, to, options);
+
+    // Get the route from the Mapbox Directions API
+    const directionsResponse = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation[0]},${userLocation[1]};${inputLocation[0]},${inputLocation[1]}?access_token=${mapboxgl.accessToken}&geometries=geojson`);
+    const directionsData = await directionsResponse.json();
+
+    // Add the route to the map
+    map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: {
+            type: 'geojson',
+            data: {
+                type: 'Feature',
+                properties: {},
+                geometry: directionsData.routes[0].geometry,
+            },
+        },
+        layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+        },
+        paint: {
+            'line-color': '#ff7e5f',
+            'line-width': 8,
+        },
+    });
+
+    // Display the distance
+    alert('The distance to the destination is ' + distance + ' kilometers.');
+}
+
+
+    </script>
+</body>
+</html>
