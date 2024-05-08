@@ -1,0 +1,8 @@
+.my-custom-marker {
+    width: 40px; /* Breedte van de marker */
+    height: 40px; /* Hoogte van de marker */
+    background-image: url('-train_90433.png'); /* Pad naar je afbeelding */
+    background-size: cover;
+    border-radius: 50%; /* Maak de marker rond */
+    cursor: pointer;
+}
