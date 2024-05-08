@@ -21,7 +21,7 @@
 
         let userLocation;
         let inputMarker;
-        let map; // Make map globally accessible
+        let line;
 
         navigator.geolocation.getCurrentPosition(successLocation, errorLocation, { enableHighAccuracy: true });
 
@@ -76,6 +76,44 @@
             // Move the map to the center of the two locations
             const center = [(inputLocation[0] + userLocation[0]) / 2, (inputLocation[1] + userLocation[1]) / 2];
             map.setCenter(center);
+
+            // Draw a line between the two locations
+            if (line) {
+                line.remove();
+            }
+            line = {
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: [userLocation, inputLocation]
+                        }
+                    }
+                ]
+            };
+            map.addSource('line', {
+                type: 'geojson',
+                data: line
+            });
+            map.addLayer({
+                id: 'line',
+                type: 'line',
+                source: 'line',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#A9A9A9',
+                    'line-width': 4
+                }
+            });
+            // Na het toevoegen van de lijn aan de kaart
+console.log('Coördinaten van de lijn:', line.features[0].geometry.coordinates);
+
+
         }
     </script>
 </body>
