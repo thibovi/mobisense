@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($user && password_verify($password . "SDF030303", $user['password'])) {
             // Gebruiker succesvol ingelogd
             $_SESSION['user_id'] = $user['id'];
-            header("Location: dashboard.php"); // Stuur door naar het dashboard of een andere pagina
+            header("Location: index.html"); // Stuur door naar het dashboard of een andere pagina
             exit();
         } else {
             $error = "Email or password is not correct.";
