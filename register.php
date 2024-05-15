@@ -34,7 +34,7 @@ if (!empty($_POST)) {
     $query_insert_user->execute();
 
     // Stuur door naar een succespagina of ergens anders na een succesvolle registratie
-    header("Location: registration_success.php");
+    header("Location: index.html");
     exit;
 }
 ?>
