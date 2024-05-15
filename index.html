@@ -11,11 +11,19 @@
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         #distance { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; z-index: 1; }
+        #popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); display: none; }
     </style>
 </head>
 <body>
     <div id="map"></div>
     <div id="distance"></div>
+    <div id="popup">
+        <h2>Vraag</h2>
+        <p>Straks moet u tanken, op welke brandstof rijdt uw auto?</p>
+        <textarea id="favoritePart" rows="4" cols="50" placeholder="Mijn favoriete deel is..."></textarea>
+        <br>
+        <button onclick="submitFavoritePart()">Verzenden</button>
+    </div>
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoibW9iaXNlbnNlIiwiYSI6ImNsdnhqcWs4ZzB0dWUyanBqa2JmeG85dXUifQ.1_he5hZkQk28N9ozWKOj8g';
         var map = new mapboxgl.Map({
@@ -38,10 +46,13 @@
         var directions = new MapboxDirections({
             accessToken: mapboxgl.accessToken,
             unit: 'imperial', // You can change to 'imperial' for imperial units
-            language: 'nl' // You can change to other languages as well
+            language: 'nl', // You can change to other languages as well
         });
 
-        map.addControl(directions, 'top-left');
+        map.addControl(new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            controls: {instructions: false}
+        }), 'top-left');
 
         // Display total distance when route is updated
         directions.on('route', function(e) {
@@ -61,29 +72,60 @@
 
                 // Voeg een marker toe voor het virtuele autotje
                 var carMarker = new mapboxgl.Marker({
-                    color: "#007bff",
-                    scale: 0.5,
-                    rotation: 0
+                    element: createMarkerElement(), // Gebruik createMarkerElement om een HTML-element met afbeelding te maken
+                    anchor: 'center'
                 }).setLngLat(routePoints[0]).addTo(map);
+
+                // Variabelen voor beweging van de auto
+                var step = 0;
+                var steps = routePoints.length;
+                var interval;
 
                 // Functie om het autotje langs de route te laten bewegen
                 function moveCar() {
-                    var step = 0;
-                    var steps = routePoints.length;
-                    var interval = setInterval(function() {
+                    interval = setInterval(function() {
                         if (step >= steps) {
                             clearInterval(interval);
                         } else {
-                            carMarker.setLngLat(routePoints[step]);
+                            var lngLat = routePoints[step];
+                            map.easeTo({ center: lngLat }); // Beweeg de camera naar de positie van het autotje
+                            carMarker.setLngLat(lngLat);
                             step++;
                         }
-                    },100); // Interval voor de animatie in milliseconden
+                    }, 100); // Interval voor de animatie in milliseconden
                 }
 
                 // Roep de moveCar functie aan om het autotje te laten rijden
                 moveCar();
+
+                // Vraag weergeven bij 1/5 van de route na een vertraging van 10 seconden
+                var oneFifth = Math.floor(routePoints.length / 5);
+                setTimeout(function() {
+                    document.getElementById('popup').style.display = 'block';
+                    clearInterval(interval); // Stop de beweging van de auto
+                }, 10000); // 10 seconden vertraging voordat de popup verschijnt
             }
         });
+
+        // Functie om een HTML-element met afbeelding te maken
+        function createMarkerElement() {
+            var img = document.createElement('img');
+            img.src = 'https://www.pngall.com/wp-content/uploads/2018/04/Sedan-Transparent.png';
+            img.style.width = '200px'; // Pas de breedte aan zoals nodig
+            img.style.height = '160px'; // Pas de hoogte aan zoals nodig
+            return img;
+        }
+
+        // Functie om het favoriete deel van de reis te verzenden
+        function submitFavoritePart() {
+            var favoritePart = document.getElementById('favoritePart').value;
+            if (favoritePart.trim() !== '') {
+                document.getElementById('popup').style.display = 'none';
+                moveCar(); // Hervat de beweging van de auto nadat de vraag is beantwoord
+            } else {
+                alert('Voer alstublieft uw favoriete deel in.');
+            }
+        }
 
     </script>
 </body>
