@@ -49,40 +49,40 @@
             if (route) {
                 var distance = route.distance;
                 document.getElementById('distance').innerHTML = 'Afstand: ' + (distance / 1000).toFixed(2) + ' km';
-                var origin = directions.getOrigin().geometry.coordinates;
-                var destination = directions.getDestination().geometry.coordinates;
 
-                console.log('Oorsprong: ', origin);
-                console.log('Bestemming: ', destination);
+                var steps = route.legs[0].steps;
+                var routePoints = [];
+                for (var i = 0; i < steps.length; i++) {
+                    var step = steps[i];
+                    for (var j = 0; j < step.intersections.length; j++) {
+                        routePoints.push(step.intersections[j].location);
+                    }
+                }
 
                 // Voeg een marker toe voor het virtuele autotje
                 var carMarker = new mapboxgl.Marker({
                     color: "#007bff",
                     scale: 0.5,
                     rotation: 0
-                }).setLngLat(origin).addTo(map);
+                }).setLngLat(routePoints[0]).addTo(map);
 
-                // Functie om het autotje te laten bewegen
+                // Functie om het autotje langs de route te laten bewegen
                 function moveCar() {
-                    var steps = 100; // Aantal stappen voor de animatie
                     var step = 0;
+                    var steps = routePoints.length;
                     var interval = setInterval(function() {
                         if (step >= steps) {
                             clearInterval(interval);
                         } else {
-                            var lng = origin[0] + (destination[0] - origin[0]) * step / steps;
-                            var lat = origin[1] + (destination[1] - origin[1]) * step / steps;
-                            carMarker.setLngLat([lng, lat]);
-
+                            carMarker.setLngLat(routePoints[step]);
                             step++;
                         }
-                    }, 50); // Interval voor de animatie in milliseconden
+                    },100); // Interval voor de animatie in milliseconden
                 }
 
                 // Roep de moveCar functie aan om het autotje te laten rijden
                 moveCar();
             }
-            
         });
 
     </script>
