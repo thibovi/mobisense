@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Mapbox GL Directions API Example</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <button id="showAnswersBtn" class="hidden">Uw resultaat</button>
+    <div id="loading">
+        <div class="loader"></div>
+        <p>uw keuzes worden verwerkt</p>
+    </div>
+    <div id="map"></div>
+    <img class="logobaro" src="img/Middel 1.png" alt="">
+    <p class="score">Uw mobiliteitsscore: <span class="punten">100</span></p>
+    <div class="barometer-container">
+        <div class="barometer-fill" id="barometer-fill"></div>
+    </div>
+
+        <div id="distance"></div>
+    <div id="overlay">
+        <div id="modal">
+            <div id="modal-content">
+                <span id="close">&times;</span>
+                <h2>Met welk type vervoersmiddel reist u?</h2>
+                <div class="transport-option" id="transport-car">
+                        <i class="fas fa-car"></i>
+                        <div>Auto</div>
+                </div>
+                <div class="transport-option" id="transport-bike">
+                    <a href="ov.html">
+                        <i class="fas fa-bicycle"></i>
+                        <div>Fiets</div>
+                    </a>
+                </div>
+                <div class="transport-option" id="transport-bus">
+                    <a href="ov.html">
+                        <i class="fas fa-bus"></i>
+                        <div>Openbaar vervoer</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="white-overlay">
+        <div id="intro-text">
+            <div class="gohome">
+                <a href="index.html">ga terug</a>
+            </div>
+            <h2>suggesties voor jou</h2>
+            <div class="carrousel">
+                <p>🚗 Deelververvoer zorgt ervoor dat je geen onderhoud hebt aan materiaal en overal een vervoersmiddel bij de hand hebt!</p>
+                <p>🚲 Fietsen is CO2-neutraal: Een gemiddelde auto daarentegen stoot ongeveer 120 gram CO2 per kilometer uit.</p>
+                <p>💰 Het gebruik van de fiets of het openbaar vervoer is vaak veel goedkoper dan het bezitten en onderhouden van een auto. Je bespaart op brandstofkosten, parkeerkosten, verzekeringen en onderhoud.</p>
+                <p>🚶 Fietsen en wandelen naar het openbaar vervoer verbetert de cardiovasculaire gezondheid. Het regelmatig bewegen helpt bij het verlagen van de bloeddruk, het verbeteren van de bloedcirculatie en het versterken van het hart.</p>
+                <p>🚌 Reizen met het openbaar vervoer of fietsen kan minder stressvol zijn dan autorijden, vooral tijdens spitsuren. Je hoeft je geen zorgen te maken over files of parkeerproblemen.</p>
+                <p>🧠 Beweging stimuleert de hersenfunctie: Regelmatige lichaamsbeweging, zoals fietsen, verhoogt de hersenfunctie en verbetert de concentratie en het geheugen. Mensen die regelmatig fietsen of wandelen naar hun werk, melden vaak een hogere productiviteit en betere prestaties op het werk.</p>
+            </div>
+        <h2 class="keuzes">Uw keuzes</h2>
+    </div>
+
+    <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Functie om de vulling van de barometer te updaten
+    function updateBarometerFill(fillPercentage) {
+        var barometerFill = document.getElementById('barometer-fill');
+        var containerHeight = document.querySelector('.barometer-container').clientHeight;
+        var fillHeight = containerHeight * fillPercentage;
+
+        // Stel de hoogte in op basis van het percentage
+        barometerFill.style.height = fillHeight + 'px';
+    }
+
+
+
+
+        let index = 0;
+        const slides = document.querySelectorAll('.carrousel p');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                if (i === n) {
+                    slide.classList.add('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            index = (index + 1) % totalSlides;
+            showSlide(index);
+        }
+
+        showSlide(index); 
+        setInterval(nextSlide, 7000); 
+    });
+
+
+
+      document.addEventListener("DOMContentLoaded", function() {
+            var customButton = document.getElementById("showAnswersBtn");
+            var whiteOverlay = document.getElementById("white-overlay");
+            var overlay = document.getElementById("overlay");
+            
+            customButton.addEventListener("click", function() {
+                whiteOverlay.style.display = "block";
+                overlay.style.display = "none"; 
+                
+                
+            });
+
+            whiteOverlay.addEventListener("click", function() {
+                whiteOverlay.style.display = "none";
+                
+            });
+        });
+        mapboxgl.accessToken = 'pk.eyJ1IjoibW9iaXNlbnNlIiwiYSI6ImNsdnhqcWs4ZzB0dWUyanBqa2JmeG85dXUifQ.1_he5hZkQk28N9ozWKOj8g';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            zoom: 20
+        });
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var userLocation = [position.coords.longitude, position.coords.latitude];
+            map.setCenter(userLocation);
+            new mapboxgl.Marker().setLngLat(userLocation).addTo(map);
+        });
+
+        var directions = new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            unit: 'imperial',
+            language: 'nl',
+            steps: false // Schakel de stappen uit
+        });
+
+        map.addControl(new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            controls: { instructions: false }
+        }), 'top-left');
+
+        var step = 0;
+        var routePoints = [];
+
+        function createMarkerElement() {
+            var img = document.createElement('img');
+            img.src = 'https://cdn4.iconfinder.com/data/icons/flat-pro-multimedia-set-1/32/btn-blue-arrow-left-512.png';
+            img.style.width = '50px';
+            img.style.height = '50px';
+            return img;
+        }
+
+        var carMarker = new mapboxgl.Marker({
+            element: createMarkerElement(),
+            anchor: 'left'
+        });
+
+        function moveCar(startStep) {
+    var interval = setInterval(function() {
+        if (step >= routePoints.length) {
+            clearInterval(interval);
+        } else {
+            var lngLat = routePoints[startStep + step];
+            map.flyTo({ center: lngLat, speed: 1.5 }); // Verhoog de snelheid van de camera
+            
+
+            if (startStep + step < routePoints.length - 1) {
+                var bearing = getBearing(routePoints[startStep + step], routePoints[startStep + step + 1]);
+                carMarker.setLngLat(lngLat).setRotation(bearing + 90); // Voeg 90 graden toe om de auto rechtop te zetten
+            } else {
+                carMarker.setLngLat(lngLat);
+            }
+
+            step++;
+
+            // Controleer of de auto punt B heeft bereikt
+            if (startStep + step === routePoints.length - 1) {
+                clearInterval(interval);
+                showModal6(); // Toon modale dialoog wanneer punt B is bereikt
+            } else if (step === 10) {
+                clearInterval(interval);
+                showModal2();
+            } else if (step === 20) {
+                clearInterval(interval);
+                showModal3();
+            } else if (step === 30) {
+                clearInterval(interval);
+                showModal4();
+            } else if (step === 40) {
+                clearInterval(interval);
+                showModal5();
+            }else if (step >= 42 && step <= 100) {
+               document.getElementById('loading').style.visibility = "visible";
+            } else {
+                document.getElementById('loading').style.visibility = "hidden";
+            }
+        }
+    }, 100); // Verlaag de intervaltijd om de snelheid van de auto te verhogen
+}
+//let punten = document.querySelector('.punten');
+
+function showModal1() {
+    overlay.style.display = 'block';
+    modal.innerHTML = `
+        <div id="modal-content">
+            <span id="close">&times;</span>
+            <h2>Straks moet u tanken,
+                op welke brandstof rijdt uw auto?</h2>
+            <div class="fuel-option" id="fuel-electric">
+                <i class="fas fa-bolt"></i>
+                <div>Elektrisch</div>
+            </div>
+            <div class="fuel-option" id="fuel-gasoline">
+                <i class="fas fa-gas-pump"></i>
+                <div>Benzine</div>
+            </div>
+            <div class="fuel-option" id="fuel-diesel">
+                <i class="fas fa-oil-can"></i>
+                <div>Diesel</div>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+
+    var fuelOptions = document.querySelectorAll('.fuel-option');
+    fuelOptions.forEach(function(option) {
+        option.addEventListener('click', function() {
+            var fuelType = this.id.split('-')[1];
+            console.log('De gebruiker heeft ' + fuelType + ' gekozen.');
+            overlay.style.display = 'none';
+            modal.style.display = 'none';
+            updateBarometer1(fuelType);
+            moveCar(step);
+            let puntenElement = document.querySelector('.punten');
+
+
+// Haal de huidige punten op (als tekst) en converteer naar een getal
+let punten = parseInt(puntenElement.textContent);
+
+            switch (fuelType) {
+                case 'electric':
+                    punten -= "10"; // Aantal punten voor elektrisch
+                    break;
+                case 'gasoline':
+                    punten -= "20"; // Aantal punten voor benzine
+                    break;
+                case 'diesel':
+                    punten -= "30"; // Aantal punten voor diesel
+                    break;
+                default:
+                    punten = "0"; // Default waarde
+            }
+        puntenElement.textContent = punten.toString();
+        });
+    });
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    });
+
+    // Update pointer position
+    updatePointerPosition();
+}
+
+
+        function showModal2() {
+    overlay.style.display = 'block';
+    modal.innerHTML = `
+        <div id="modal-content">
+            <span id="close">&times;</span>
+            <h2>Rijdt u door een LEZ?</h2>
+            <div class="form-group">
+                <button id="yes-btn">Ja</button>
+                <button id="no-btn">Nee</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+
+    document.getElementById('yes-btn').addEventListener('click', function() {
+        console.log('De gebruiker heeft gekozen voor ja.');
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        moveCar(step);
+        showResultInWhiteOverlay('Ja'); // Hier wordt de functie aangeroepen met het resultaat 'Ja'
+    });
+
+    document.getElementById('no-btn').addEventListener('click', function() {
+        console.log('De gebruiker heeft gekozen voor nee.');
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        moveCar(step);
+        showResultInWhiteOverlay('Nee'); // Hier wordt de functie aangeroepen met het resultaat 'Nee'
+    });
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    });
+
+    // Update pointer position
+    updatePointerPosition();
+}
+
+// Herhaal hetzelfde patroon voor de andere modale dialoogfuncties
+
+function showModal3() {
+    overlay.style.display = 'block';
+    modal.innerHTML = `
+        <div id="modal-content">
+            <span id="close">&times;</span>
+            <h2>Tankt u adblue?</h2>
+            <div class="form-group">
+                <button id="yes-btn">Ja</button>
+                <button id="no-btn">Nee</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+
+    document.getElementById('yes-btn').addEventListener('click', function() {
+        console.log('De gebruiker heeft gekozen voor ja.');
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        moveCar(step);
+        showResultInWhiteOverlay('Ja'); // Hier wordt de functie aangeroepen met het resultaat 'Ja'
+    });
+
+    document.getElementById('no-btn').addEventListener('click', function() {
+        console.log('De gebruiker heeft gekozen voor nee.');
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        moveCar(step);
+        showResultInWhiteOverlay('Nee'); // Hier wordt de functie aangeroepen met het resultaat 'Nee'
+    });
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    });
+
+    // Update pointer position
+    updatePointerPosition();
+}
+        
+
+function showModal4() {
+    overlay.style.display = 'block';
+    modal.innerHTML = `
+        <div id="modal-content">
+            <span id="close">&times;</span>
+            <h2>Van welk jaar is uw auto?</h2>
+            <div class="form-group">
+                <label for="car-year">Kies het jaar:</label>
+                <select id="car-year">
+                    ${generateYearOptions()}
+                </select>
+            </div>
+            <div class="form-group">
+                <button id="submit-car-year">Verzenden</button>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+
+    document.getElementById('submit-car-year').addEventListener('click', function() {
+        var selectedYear = document.getElementById('car-year').value;
+        console.log('De gebruiker heeft gekozen voor het jaar ' + selectedYear + '.');
+
+        let puntenElement = document.querySelector('.punten');
+        let punten = parseInt(puntenElement.textContent); // Haal de huidige punten op (als tekst) en converteer naar een getal
+
+        // Voeg hier de if-structuur toe
+        if (selectedYear < 2016) {
+            punten -= 30;
+            console.log('Dit jaar is voor 2016.');
+        } else {
+            punten += 30;
+            console.log('Dit jaar is 2016 of later.');
+        }
+
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        updateBarometer1(selectedYear);
+        moveCar(step);
+
+        // Update de punten in de HTML
+        puntenElement.textContent = punten.toString();
+        updatePunten(punten); // Roep updatePunten aan om de punten bij te werken
+    });
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    });
+
+    // Update pointer position
+    updatePointerPosition();
+}
+
+function updatePunten(punten) {
+    document.querySelector('.punten').textContent = punten;
+}
+
+
+function showModal5() {
+    overlay.style.display = 'block';
+    modal.innerHTML = `
+        <div id="modal-content">
+            <span id="close">&times;</span>
+            <h2>Welke route verkiest u? de snelste, zuinigste, meest duurzame?</h2>
+            <div class="route-option" id="route-fastest">
+                <i class="fas fa-tachometer-alt"></i>
+                <div>Snelste</div>
+            </div>
+            <div class="route-option" id="route-economical">
+                <i class="fas fa-dollar-sign"></i>
+                <div>Zuinigste</div>
+            </div>
+            <div class="route-option" id="route-sustainable">
+                <i class="fas fa-leaf"></i>
+                <div>Meest duurzame</div>
+            </div>
+        </div>
+    `;
+    modal.style.display = 'block';
+
+    var routeOptions = document.querySelectorAll('.route-option');
+    routeOptions.forEach(function(option) {
+        option.addEventListener('click', function() {
+            var routeType = this.id.split('-')[1];
+            console.log('De gebruiker heeft de ' + routeType + ' route gekozen.');
+            overlay.style.display = 'none';
+            modal.style.display = 'none';
+            moveCar(step);
+            showResultInWhiteOverlay(routeType); // Hier wordt de functie aangeroepen met het resultaat van de gekozen route
+            var puntenElement = document.querySelector('.punten'); // Gebruik een class selector in plaats van een id selector
+
+            let punten = parseInt(puntenElement.textContent);
+            // Verminder punten op basis van de gekozen route
+            switch (routeType) {
+                case 'fastest':
+                    punten -= 30; // Punten verminderd voor snelste route
+                    break;
+                case 'economical':
+                    punten += 10; // Punten verminderd voor zuinigste route
+                    break;
+                case 'sustainable':
+                    punten += 20; // Punten verminderd voor meest duurzame route
+                    break;
+                default:
+                    punten -= 0; // Default waarde
+            }
+            puntenElement.textContent = punten.toString();
+        });
+    });
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    });
+
+    // Update pointer position
+    updatePointerPosition();
+}
+
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+    }); 
+
+function updatePuntenBasedOnRoute(routeType) {
+        // Selecteer het span element dat de punten weergeeft
+        let puntenElement = document.querySelector('.punten');
+
+// Haal de huidige punten op (als tekst) en converteer naar een getal
+let punten = parseInt(puntenElement.textContent);
+
+    // Hier kun je de logica toevoegen om punten bij te werken op basis van de gekozen route
+    switch (routeType) {
+        case 'fastest':
+            punten -= 30; // Voorbeeld: voeg 10 punten toe voor de snelste route
+            break;
+        case 'economical':
+            punten += 10; // Voorbeeld: voeg 5 punten toe voor de zuinigste route
+            break;
+        case 'sustainable':
+            punten += 25; // Voorbeeld: voeg 15 punten toe voor de meest duurzame route
+            break;
+        default:
+            break;
+    }
+    puntenElement.textContent = punten.toString();
+
+    // Update de punten in de HTML
+    updatePunten();
+}
+
+function updatePunten() {
+    document.querySelector('.punten').textContent = punten;
+}
+
+
+function showModal6() {
+    // Toon de custom button
+    var customButton = document.getElementById('showAnswersBtn');
+    customButton.style.visibility = "visible";
+
+    var closeBtn = document.getElementById('close');
+    closeBtn.addEventListener('click', function() {
+        overlay.style.display = 'none';
+        modal.style.display = 'none';
+        // Verberg de custom button
+        customButton.classList.remove('visible');
+        customButton.classList.add('hidden');
+    });
+
+    // Update pointer position
+    updatePointerPosition();
+}
+
+
+/*function showModal7() {
+    // Toon de custom button
+    var loadingscreen = document.getElementById('loading');
+    loadingscreen.style.visibility = "visible";
+
+    }*/
+
+
+function updateBarometer() {
+    const puntenElement = document.querySelector('.punten');
+    const barometerFill = document.getElementById('barometer-fill');
+
+    const punten = parseInt(puntenElement.textContent);
+    const barometerHeight = Math.min(Math.max(punten, 0), 100);
+
+    barometerFill.style.height = `${barometerHeight}%`;
+}
+
+document.querySelector('.punten').addEventListener('DOMSubtreeModified', updateBarometer);
+
+
+
+        function generateYearOptions() {
+            var currentYear = new Date().getFullYear();
+            var options = '';
+            for (var year = currentYear; year >= 1899; year--) {
+                options += '<option value="' + year + '">' + year + '</option>';
+            }
+            return options;
+        }
+
+        function getBearing(start, end) {
+            var startLng = start[0];
+            var startLat = start[1];
+            var endLng = end[0];
+            var endLat = end[1];
+
+            var y = Math.sin(endLng - startLng) * Math.cos(endLat);
+            var x = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(endLng - startLng);
+            var bearing = Math.atan2(y, x);
+            return (bearing * (180 / Math.PI) + 360) % 360;
+        }
+        document.querySelector('.punten').textContent = 100; // Initial punten value
+        updateBarometer(); // Initial update
+        function updateBarometer1(value) {
+            showResultInWhiteOverlay(value);
+        }
+
+
+
+        var questionIndex = 0;
+    var tips = [
+"Een auto kost je jaarlijks gemmideld €4500 terwijl een bus abonnement je maar €215 kost! Is de plaats moeilijk te bereiken met het OV? Overweeg deelvervoer zoals carpoolen of deelauto's om uitstoot te verminderen en het milieu te sparen alsook je portemonnee. Samen maken we een verschil!",
+"Lage-emissiezones (LEZ) verminderen luchtvervuiling door vervuilende voertuigen te weren uit stedelijke gebieden. Je kan je auto bijvoorbeeld buiten de stad parkeren en dan gebruik maken van een deelfiets of step. Vermijd boetes en maak bewustere keuzes voor een schonere toekomst!", 
+"AdBlue is een vloeistof die wordt gebruikt in moderne dieselmotoren om schadelijke NOx-uitstoot te verminderen. Door AdBlue in een speciale tank te vullen, wordt het in de uitlaatgassen geïnjecteerd, waar het ammoniak vrijgeeft en de schadelijke stikstofoxiden omzet in onschadelijke stikstof en waterdamp. Dit helpt je voertuig schoner te rijden en voldoet aan milieunormen. Controleer regelmatig het AdBlue-niveau om efficiënte werking en minder vervuiling te garanderen.", 
+"Een nieuwere auto kopen kan een positieve impact op het milieu hebben. Moderne auto's zijn vaak efficiënter en schoner dankzij geavanceerde technologieën die brandstofverbruik verminderen en uitstoot beperken. Overweeg een elektrische of hybride auto voor nog lagere emissies. Door te kiezen voor een milieuvriendelijker voertuig, draag je bij aan schonere lucht en een duurzamere toekomst.", 
+"Kies de snelste, efficiëntste of meest duurzame route om brandstof te besparen en je ecologische voetafdruk te verkleinen. Gebruik navigatie-apps die actuele verkeersinformatie en eco-vriendelijke routes bieden. Door files en omwegen te vermijden, verminder je reistijd en uitstoot. Efficiënt rijden draagt bij aan een schoner milieu en een zuiniger gebruik van je voertuig."
+];
+
+    function showResultInWhiteOverlay(result) {
+        var whiteOverlay = document.getElementById("white-overlay");
+        var resultContainer = document.createElement("div");
+        resultContainer.classList.add("result-container");
+
+        var questions = ["Uw brandstof", "LEZ", "AdBlue", "Eerste inschrijving auto", "route"];
+
+        if (questionIndex < questions.length) {
+            var questionElement = document.createElement("div");
+            questionElement.textContent = questions[questionIndex] + ": ";
+            questionElement.style.fontWeight = "bold";
+            resultContainer.appendChild(questionElement);
+
+            var resultElement = document.createElement("div");
+            resultElement.textContent = result;
+            resultContainer.appendChild(resultElement);
+
+            var tooltip = document.createElement("div");
+            tooltip.classList.add("tooltip");
+            tooltip.textContent = tips[questionIndex];
+            resultContainer.appendChild(tooltip);
+
+            if (result === "electric") {
+            resultContainer.classList.add("green");
+        } else if (result === "benzine") {
+            resultContainer.classList.add("orange");
+        } else if (result === "diesel") {
+            resultContainer.classList.add("red");
+        } else if (result === "diesel") {
+            resultContainer.classList.add("orange");
+        } else if (result === "ja") {
+            resultContainer.classList.add("green");
+        } else if (result <= "2016") {
+            resultContainer.classList.add("red");
+        }else if (result >= "2016") {
+            resultContainer.classList.add("green");
+        }
+        else if (result === "snelste") {
+            resultContainer.classList.add("red");
+        } else if (result === "meest duurzame") {
+            resultContainer.classList.add("green");
+        }else if (result === "zuinigste") {
+            resultContainer.classList.add("orange");
+        }
+            whiteOverlay.appendChild(resultContainer);
+            questionIndex++; // Verhoog de index voor de volgende vraag
+        } else {
+            console.warn("Er zijn meer resultaten dan vragen.");
+        }
+    }
+
+    function toggleOverlay() {
+        var overlay = document.getElementById("white-overlay");
+        overlay.style.display = (overlay.style.display === "none" || overlay.style.display === "") ? "flex" : "none";
+    }
+
+        function valueToPosition(value) {
+            var min = 1899;
+            var max = new Date().getFullYear();
+            var range = max - min;
+            var position = (value - min) / range * 180;
+            return position;
+        }
+
+
+
+        var overlay = document.getElementById('overlay');
+        var modal = document.getElementById('modal');
+
+        // Toegevoegde functie om de eerste vraag te tonen voordat de auto begint te rijden
+        function showTransportModal() {
+            overlay.style.display = 'block';
+            modal.innerHTML = `
+                <div id="modal-content">
+                    <span id="close">&times;</span>
+                    <h2>Met welk type vervoersmiddel reist u?</h2>
+                    <div class="transport-option" id="transport-car">
+                        <i class="fas fa-car"></i>
+                        <div>Auto</div>
+                    </div>
+                    <div class="transport-option" id="transport-bike">
+                        <i class="fas fa-bicycle"></i>
+                        <div><a href="/mobisense/ov.html">Fiets</a></div>
+                    </div>
+                    <div class="transport-option" id="transport-bus">
+                        <i class="fas fa-bus"></i>
+                        <div><a href="/mobisense/ov.html">openbaar vervoer</a></div>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'block';
+
+            var transportOptions = document.querySelectorAll('.transport-option');
+            transportOptions.forEach(function(option) {
+                option.addEventListener('click', function() {
+                    var transportType = this.id.split('-')[1];
+                    if (transportType === 'bike' || transportType === 'bus' ) {
+                window.location.href = 'ov.html';
+            }
+                    console.log('De gebruiker reist met ' + transportType + '.');
+                    overlay.style.display = 'none';
+                    modal.style.display = 'none';
+                    // Je zou hier extra logica kunnen toevoegen afhankelijk van het gekozen vervoersmiddel
+                    showModal1(); // Na het kiezen van het vervoersmiddel, wordt de volgende vraag getoond
+                });
+            });
+
+            var closeBtn = document.getElementById('close');
+            closeBtn.addEventListener('click', function() {
+                overlay.style.display = 'none';
+                modal.style.display = 'none';
+            });
+        }
+
+        directions.on('route', function(e) {
+            var route = e.route[0];
+            if (route) {
+                var distance = route.distance;
+                document.getElementById('distance').innerHTML = 'Afstand: ' + (distance / 1000).toFixed(2) + ' km';
+
+                var steps = route.legs[0].steps;
+                routePoints = [];
+                for (var i = 0; i < steps.length; i++) {
+                    var step = steps[i];
+                    for (var j = 0; j < step.intersections.length; j++) {
+                        routePoints.push(step.intersections[j].location);
+                    }
+                }
+
+                carMarker.setLngLat(routePoints[0]).addTo(map);
+                step = 0;
+                showTransportModal(); // Toon de eerste vraag over het vervoersmiddel
+            }
+
+
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+/* Algemene opmaak */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Kaart */
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Afstandsinformatie */
+#distance {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: white;
+    padding: 10px;
+    z-index: 1;
+}
+
+/* Brandstofbarometer */
+#barometer {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    width: 200px;
+    height: 30px;
+    background: linear-gradient(to right, red, yellow, green);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    z-index: 1000; /* Zorg ervoor dat dit hoger is dan de z-index van de overlay */
+}
+
+/* Brandstofbarometer wijzer */
+#pointer {
+    width: 10px;
+    height: 30px;
+    background-color: black;
+    position: relative;
+    left: 0;
+    transition: left 0.5s;
+    border-radius: 5px;
+}
+
+/* Overlay voor modale vensters */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+}
+
+/* Modale vensters */
+#modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Inhoud van modale vensters */
+#modal-content {
+    text-align: center;
+}
+
+/* Sluitknop voor modale vensters */
+#close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+}
+
+/* Stijl voor vervoersopties */
+.transport-option {
+    display: inline-block; /* Zet de opties naast elkaar */
+    margin: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.transport-option i {
+    font-size: 50px;
+    color: #333;
+}
+
+
+
+/* Stijl voor brandstofopties */
+.fuel-option {
+    display: inline-block; /* Zet de opties naast elkaar */
+    margin: 10px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.fuel-option i {
+    font-size: 50px;
+    color: #333;
+}
+
+/* Stijl voor formulierelementen */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+.form-group button {
+    width: 48%; /* Verdeel de breedte tussen de knoppen */
+    padding: 10px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.form-group button:hover {
+    background-color: #0056b3;
+}
+
+/* Aanvullende stijlen */
+.mapbox-directions-inputs {
+    margin-top: 120px;
+}
+
+#distance {
+    visibility: hidden;
+}
+
+/* Stijl voor modale venster vragen */
+.modal-question {
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+/* Stijl voor modale venster antwoorden */
+.modal-answer {
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: inline-block; /* Zet de antwoorden naast elkaar */
+}
+
+/* Stijl voor modale venster antwoorden bij gebruik van knoppen */
+.modal-answer button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Hover-stijl voor modale venster antwoorden bij gebruik van knoppen */
+.modal-answer button:hover {
+    background-color: #0056b3;
+}
+
+/* Stijl voor pop-up vragen */
+.popup-question {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* Stijl voor pop-up antwoorden */
+.popup-answer {
+    margin-bottom: 10px;
+}
+
+/* Stijl voor de eerste pop-up */
+#modal-content .first-popup {
+    display: block;
+}
+
+/* Stijl voor de volgende pop-ups */
+#modal-content .next-popup {
+    display: none;
+}
+
+/* Stijlen voor de route-opties */
+.route-option {
+    display: inline-block; /* Zorgt ervoor dat de opties naast elkaar staan */
+    margin: 10px; /* Voeg een beetje ruimte toe tussen de opties */
+    cursor: pointer;
+    text-align: center;
+}
+
+.route-option i {
+    font-size: 50px;
+    color: #333;
+}
+
+
+#showAnswersBtn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #4CAF50; 
+    color: white; 
+    padding: 15px 30px; 
+    font-size: 16px; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+    z-index: 999; 
+    visibility: hidden; 
+}
+
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Halfdoorzichtige zwarte achtergrond */
+    z-index: 998; /* Zorg ervoor dat de overlay onder de knop ligt */
+    display: none; /* Begin verborgen */
+}
+
+
+        #distance{
+            color: black;
+        }
+
+        #white-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95); /* Volledig ondoorzichtig wit */
+    display: none;
+    z-index: 999; /* Zorg ervoor dat de overlay bovenop andere elementen staat */
+    overflow: auto; /* Zorgt voor scrollen als de inhoud groter is dan het scherm */
+}
+
+
+.result-container {
+    width: calc(20% - 20px); /* Breedte van elke container, rekening houdend met marge */
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Schaduw toevoegen */
+    padding: 20px;
+    margin: 20px auto; /* Midden uitlijnen, boven en onder 20px marge */
+    text-align: center; /* Center align inhoud */
+}
+
+.keuzes{
+    text-align: center;
+}
+.result-container {
+    width: 100px; /* Begin met een klein formaat */
+    height: 100px; /* Begin met een klein formaat */
+    transition: width 0.3s, height 0.3s; /* Voeg overgangseffecten toe */
+}
+
+.result-container:hover {
+    width: 40%; /* Maak het groter wanneer erover wordt gezweefd */
+    height: 15%; /* Maak het groter wanneer erover wordt gezweefd */
+}
+
+
+.result-container .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.result-container:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.result-container.green {
+    background-color: greenyellow; /* Groene kleur voor een positief antwoord */
+}
+
+.result-container.orange {
+    background-color: orange; /* Rode kleur voor een negatief antwoord */
+}
+
+.result-container.red {
+    background-color: red; /* Blauwe kleur voor een neutraal antwoord */
+}
+
+
+#showAnswersBtn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #4CAF50; 
+    color: white; 
+    padding: 15px 30px; 
+    font-size: 16px; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+    z-index: 999; 
+    visibility: hidden; 
+}
+
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Halfdoorzichtige zwarte achtergrond */
+    z-index: 998; /* Zorg ervoor dat de overlay onder de knop ligt */
+    display: none; /* Begin verborgen */
+}
+
+
+        #distance{
+            color: black;
+        }
+        #white-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95); /* Volledig ondoorzichtig wit */
+            display: none;
+            z-index: 999; /* Zorg ervoor dat de overlay bovenop andere elementen staat */
+            overflow: auto; /* Zorgt voor scrollen als de inhoud groter is dan het scherm */
+        }
+        
+        
+        .result-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Schaduw toevoegen */
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s; /* Voeg overgangseffecten toe */
+            overflow: hidden;
+            flex: 1 0 21%; /* Zorgt ervoor dat de containers gelijk verdeeld worden */
+            max-width: 40%;
+            display: inline-block; /* Blokken naast elkaar plaatsen */
+            vertical-align: top; /* Zorg ervoor dat de blokken bovenaan uitgelijnd zijn */
+            margin-left: 100px;
+    
+        
+        }
+        
+        .keuzes{
+            text-align: center;
+        }
+        
+        .result-container {
+            transition: width 0.3s, height 0.3s; /* Voeg overgangseffecten toe */
+        }
+        
+        .result-container:hover {
+            width: 20%; /* Maak het groter wanneer erover wordt gezweefd */
+            height: 40%; /* Maak het groter wanneer erover wordt gezweefd */
+        }
+        
+        .result-container .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .result-container:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .result-container.green {
+            background-color: greenyellow; /* Groene kleur voor een positief antwoord */
+        }
+        
+        .result-container.orange {
+            background-color: orange; /* Rode kleur voor een negatief antwoord */
+        }
+        
+        .result-container.red {
+            background-color: red; /* Blauwe kleur voor een neutraal antwoord */
+        }
+
+a{
+    text-decoration: none;
+    color: black;
+}
+
+#intro-text {
+    text-align: center;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+
+
+.carrousel {
+    position: relative;
+    width: 100%;
+    height: 200px; /* Pas dit aan op basis van je behoeften */
+    overflow: hidden;
+}
+
+.carrousel p {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    transition: opacity 1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px; /* Optioneel, voor betere opmaak */
+    box-sizing: border-box;
+}
+
+.carrousel p.active {
+    opacity: 1;
+}
+
+.gohome{
+    display: flex;
+    flex-direction: row;
+}
+
+.gohome a {
+    background: linear-gradient(135deg, #ff6600, #ff9900);
+    color: #fff;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1em;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+    text-decoration: none;
+}
+
+.gohome a:hover {
+    background: linear-gradient(135deg, #ff9900, #ffcc00);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.score {
+    position: fixed; /* Veranderd naar fixed */
+    bottom: 90px;
+    right: 30px; /* Aanpassing om aan de rechterkant te plaatsen */
+    display: flex;
+    justify-content: flex-end; /* Veranderd naar flex-end */
+    z-index: 1000; 
+    background-color: #22799D;
+    color: white;
+    font-weight: 700;
+    padding: 20px;
+    border-radius: 20px;
+}
+
+
+.barometer-container {
+    position: absolute;
+    top: 60%;
+    right: 125px; /* Afstand vanaf de rechterkant */
+    transform: translateY(-50%);
+    width: 20px; /* Breedte van de barometer */
+    height: 300px; /* Hoogte van de barometer */
+    border: 1px solid #22799D;
+    border-radius: 10px;
+    z-index: 1000;
+    
+}
+
+.barometer-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #22799D;
+    transition: height 0.3s ease-out, background-color 0.3s ease-out;
+    border-radius: 8px;
+}
+
+.logobaro {
+    position: absolute;
+    top: 40%;
+    right: 97px; /* Afstand vanaf de rechterkant */
+    display: flex;
+    align-items: center;
+    width: 80px;
+    height: auto;
+    z-index: 1001;
+}
+
+
+#loading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background-color: white;
+    padding: 35px 50px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    visibility: hidden;
+}
+
+.loader {
+    border: 4px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 4px solid #3498db;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    color: #333;
+}
+
+
+ #white-overlay .score {
+    font-size: 20px;
+    position: fixed; /* Veranderd naar fixed */
+    bottom: 770px;
+    right: 780px; /* Aanpassing om aan de rechterkant te plaatsen */
+    display: flex;
+    justify-content: flex-end; /* Veranderd naar flex-end */
+    z-index: 1000; 
+ }
+
+ .red-text {
+    color: red;
+}
